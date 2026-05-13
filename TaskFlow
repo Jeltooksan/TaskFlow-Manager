@@ -1,0 +1,401 @@
+#include <iostream>
+#include <vector>
+#include <string>
+#include <windows.h>
+#include <iomanip>
+#include <ctime>
+
+using namespace std;
+
+// Тапсырманы сипаттайтын құрылым
+struct Task {
+    string name;           // Тапсырма атауы
+    string priority;       // Маңыздылығы (Жоғары, Орташа, Төмен)
+    bool isCompleted;      // Орындалу күйі
+    int id;                // Бірегей идентификатор
+    // Жаңа тапсырманы оңай жасауға арналған конструктор
+    Task(int taskId, const string& taskName, const string& taskPriority) 
+        : id(taskId), name(taskName), priority(taskPriority), isCompleted(false) {}
+};
+
+// Тапсырмаларды сақтауға арналған жаһандық вектор
+vector<Task> taskList;
+int nextId = 1; // ID генерациялауға арналған есептегіш
+
+// Консольдегі мәтін түсін өзгерту функциясы
+void setColor(int color) {
+    HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
+    SetConsoleTextAttribute(hConsole, color);
+}
+
+// Бағдарлама тақырыбын шығару функциясы
+void printHeader() {
+    system("cls"); // Экранды тазарту
+    setColor(11); // Көгілдір түс
+    cout << "╔════════════════════════════════════════════════════════╗" << endl;
+    cout << "║            📋 TASKFLOW - Тапсырмалар менеджері         ║" << endl;
+    cout << "╚════════════════════════════════════════════════════════╝" << endl;
+    setColor(7); // Қалыпты түске қайту
+    cout << endl;
+}
+
+// Негізгі менюді көрсету
+void displayMenu() {
+    setColor(14); // Сары түс
+    cout << "\n┌───────────── НЕГІЗГІ МӘЗІР ──────────────┐" << endl;
+    setColor(7);
+    cout << "│  1️⃣  ➕ Жаңа тапсырма қосу               │" << endl;
+    cout << "│  2️⃣  📋 Барлық тапсырмаларды көру        │" << endl;
+    cout << "│  3️⃣  ✅ Орындалды деп белгілеу           │" << endl;
+    cout << "│  4️⃣  🗑️  Тапсырманы жою                   │" << endl;
+    cout << "│  5️⃣  📊 Статистика                       │" << endl;
+    cout << "│  0️⃣  🚪 Шығу                             │" << endl;
+    setColor(14);
+    cout << "└──────────────────────────────────────────┘" << endl;
+    setColor(7);
+    cout << "\n→ Әрекетті таңдаңыз: ";
+}
+
+// Жаңа тапсырма қосу функциясы
+void addTask() {
+    printHeader();
+    setColor(10); // Жасыл түс
+    cout << "➕ ЖАҢА ТАПСЫРМА ҚОСУ" << endl;
+    cout << "━━━━━━━━━━━━━━━━━━━━━━━━━━" << endl;
+    setColor(7);
+    
+    string name, priority;
+    int priorityChoice;
+    
+    cout << "\n📝 Тапсырма атауын енгізіңіз: ";
+    cin.ignore(); // Буферді тазалау
+    getline(cin, name);
+    
+    if (name.empty()) {
+        setColor(12); // Қызыл
+        cout << "\n❌ Қате: Тапсырма атауы бос болмауы керек!" << endl;
+        setColor(7);
+        Sleep(2000);
+        return;
+    }
+    
+    cout << "\n🎯 Маңыздылық деңгейін таңдаңыз:" << endl;
+    cout << "  1 - 🔴 Жоғары" << endl;
+    cout << "  2 - 🟡 Орташа" << endl;
+    cout << "  3 - 🟢 Төмен" << endl;
+    cout << "\n→ Сіздің таңдауыңыз: ";
+    cin >> priorityChoice;
+    
+    switch(priorityChoice) {
+        case 1:
+            priority = "Жоғары";
+            break;
+        case 2:
+            priority = "Орташа";
+            break;
+        case 3:
+            priority = "Төмен";
+            break;
+        default:
+            priority = "Орташа";
+            setColor(14);
+            cout << "\n⚠️  Қате таңдау. Автоматты түрде 'Орташа' орнатылды." << endl;
+            setColor(7);
+    }
+    
+    // Жаңа тапсырманы жасап, тізімге қосу
+    Task newTask(nextId++, name, priority);
+    taskList.push_back(newTask);
+    
+    setColor(10);
+    cout << "\n✅ Тапсырма сәтті қосылды!" << endl;
+    setColor(7);
+    Sleep(1500);
+}
+
+// Барлық тапсырмаларды кесте түрінде көрсету
+void displayTasks() {
+    printHeader();
+    setColor(14);
+    cout << "📋 БАРЛЫҚ ТАПСЫРМАЛАР ТІЗІМІ" << endl;
+    cout << "━━━━━━━━━━━━━━━━━━━━━━━━━━━━" << endl;
+    setColor(7);
+    
+    if (taskList.empty()) {
+        setColor(8); // Сұр түс
+        cout << "\n📭 Тізім бос. Жаңа тапсырма қосыңыз!" << endl;
+        setColor(7);
+        cout << "\nЖалғастыру үшін Enter басыңыз...";
+        cin.ignore();
+        cin.get();
+        return;
+    }
+    
+    cout << "\n┌─────┬────────────────────────────────┬────────────┬────────┐" << endl;
+    cout << "│ ID  │ Тапсырма атауы                 │ Маңыздылық │ Күйі   │" << endl;
+    cout << "├─────┼────────────────────────────────┼────────────┼────────┤" << endl;
+    
+    for (const auto& task : taskList) {
+        cout << "│ " << setw(3) << task.id << " │ ";
+        
+        string displayName = task.name;
+        if (displayName.length() > 30) {
+            displayName = displayName.substr(0, 27) + "...";
+        }
+        cout << left << setw(30) << displayName << " │ ";
+        
+        if (task.priority == "Жоғары") {
+            setColor(12); cout << "🔴 Жоғары ";
+        } else if (task.priority == "Орташа") {
+            setColor(14); cout << "🟡 Орташа ";
+        } else {
+            setColor(10); cout << "🟢 Төмен  ";
+        }
+        setColor(7);
+        
+        cout << " │ ";
+        
+        if (task.isCompleted) {
+            setColor(10); cout << " [✓]  ";
+        } else {
+            setColor(8); cout << " [ ]  ";
+        }
+        setColor(7);
+        
+        cout << "│" << endl;
+    }
+    
+    cout << "└─────┴────────────────────────────────┴────────────┴────────┘" << endl;
+    
+    cout << "\nЖалғастыру үшін Enter басыңыз...";
+    cin.ignore();
+    cin.get();
+}
+
+// Тапсырманы орындалды деп белгілеу
+void completeTask() {
+    printHeader();
+    setColor(10);
+    cout << "✅ ТАПСЫРМАНЫ ОРЫНДАЛДЫ ДЕП БЕЛГІЛЕУ" << endl;
+    cout << "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" << endl;
+    setColor(7);
+    
+    if (taskList.empty()) {
+        setColor(8);
+        cout << "\n📭 Тізім бос!" << endl;
+        setColor(7);
+        Sleep(2000);
+        return;
+    }
+    
+    cout << "\nОрындалмаған тапсырмалар:" << endl;
+    bool hasIncompleteTasks = false;
+    
+    for (const auto& task : taskList) {
+        if (!task.isCompleted) {
+            cout << "  [" << task.id << "] " << task.name << endl;
+            hasIncompleteTasks = true;
+        }
+    }
+    
+    if (!hasIncompleteTasks) {
+        setColor(10);
+        cout << "\n🎉 Барлық тапсырма орындалған! Керемет!" << endl;
+        setColor(7);
+        Sleep(2000);
+        return;
+    }
+    
+    int taskId;
+    cout << "\n→ Орындалған тапсырманың ID нөмірін енгізіңіз: ";
+    cin >> taskId;
+    
+    bool found = false;
+    for (auto& task : taskList) {
+        if (task.id == taskId) {
+            if (task.isCompleted) {
+                setColor(14);
+                cout << "\n⚠️  Бұл тапсырма бұрыннан орындалған!" << endl;
+                setColor(7);
+            } else {
+                task.isCompleted = true;
+                setColor(10);
+                cout << "\n✅ \"" << task.name << "\" тапсырмасы орындалды!" << endl;
+                setColor(7);
+            }
+            found = true;
+            break;
+        }
+    }
+    
+    if (!found) {
+        setColor(12);
+        cout << "\n❌ ID нөмірі " << taskId << " тапсырма табылмады!" << endl;
+        setColor(7);
+    }
+    
+    Sleep(2000);
+}
+
+// Тапсырманы жою
+void deleteTask() {
+    printHeader();
+    setColor(12);
+    cout << "🗑️  ТАПСЫРМАНЫ ЖОЮ" << endl;
+    cout << "━━━━━━━━━━━━━━━━━━━" << endl;
+    setColor(7);
+    
+    if (taskList.empty()) {
+        setColor(8);
+        cout << "\n📭 Тізім бос!" << endl;
+        setColor(7);
+        Sleep(2000);
+        return;
+    }
+    
+    cout << "\nАғымдағы тапсырмалар:" << endl;
+    for (const auto& task : taskList) {
+        cout << "  [" << task.id << "] " << task.name;
+        if (task.isCompleted) {
+            setColor(10); cout << " [✓]"; setColor(7);
+        }
+        cout << endl;
+    }
+    
+    int taskId;
+    cout << "\n→ Жойылатын тапсырманың ID нөмірін енгізіңіз (0 - бас тарту): ";
+    cin >> taskId;
+    
+    if (taskId == 0) return;
+    
+    for (auto it = taskList.begin(); it != taskList.end(); ++it) {
+        if (it->id == taskId) {
+            setColor(12);
+            cout << "\n🗑️  \"" << it->name << "\" тапсырмасы жойылды!" << endl;
+            setColor(7);
+            taskList.erase(it);
+            Sleep(1500);
+            return;
+        }
+    }
+    
+    setColor(12);
+    cout << "\n❌ ID нөмірі " << taskId << " тапсырма табылмады!" << endl;
+    setColor(7);
+    Sleep(2000);
+}
+
+// Статистиканы көрсету
+void showStatistics() {
+    printHeader();
+    setColor(11);
+    cout << "📊 ТАПСЫРМАЛАР СТАТИСТИКАСЫ" << endl;
+    cout << "━━━━━━━━━━━━━━━━━━━━━━━━━━━" << endl;
+    setColor(7);
+    
+    if (taskList.empty()) {
+        setColor(8);
+        cout << "\n📭 Статистиканы көрсету үшін мәлімет жеткіліксіз." << endl;
+        setColor(7);
+        cout << "\nЖалғастыру үшін Enter басыңыз...";
+        cin.ignore();
+        cin.get();
+        return;
+    }
+    
+    int total = taskList.size();
+    int completed = 0;
+    int high = 0, medium = 0, low = 0;
+    
+    for (const auto& task : taskList) {
+        if (task.isCompleted) completed++;
+        if (task.priority == "Жоғары") high++;
+        else if (task.priority == "Орташа") medium++;
+        else low++;
+    }
+    
+    int pending = total - completed;
+    double completionRate = (total > 0) ? (completed * 100.0 / total) : 0;
+    
+    cout << "\n┌───────────────────────────────────────┐" << endl;
+    cout << "│ 📈 Жалпы көрсеткіштер                 │" << endl;
+    cout << "├───────────────────────────────────────┤" << endl;
+    cout << "│ Барлық тапсырмалар:    " << setw(14) << total << " │" << endl;
+    
+    setColor(10);
+    cout << "│ Орындалғаны:           " << setw(14) << completed << " │" << endl;
+    setColor(7);
+    
+    setColor(14);
+    cout << "│ Орындалуда:            " << setw(14) << pending << " │" << endl;
+    setColor(7);
+    
+    cout << "│ Орындалу пайызы:       " << setw(11) << fixed << setprecision(1) << completionRate << "% │" << endl;
+    cout << "├───────────────────────────────────────┤" << endl;
+    cout << "│ 🎯 Маңыздылығы бойынша                │" << endl;
+    cout << "├───────────────────────────────────────┤" << endl;
+    
+    setColor(12); cout << "│ 🔴 Жоғары:             " << setw(14) << high << " │" << endl; setColor(7);
+    setColor(14); cout << "│ 🟡 Орташа:             " << setw(14) << medium << " │" << endl; setColor(7);
+    setColor(10); cout << "│ 🟢 Төмен:              " << setw(14) << low << " │" << endl; setColor(7);
+    
+    cout << "└───────────────────────────────────────┘" << endl;
+    
+    cout << "\n💡 ";
+    if (completionRate >= 80) {
+        setColor(10); cout << "Керемет нәтиже! Сіз барлық тапсырманы дерлік бітірдіңіз!";
+    } else if (completionRate >= 50) {
+        setColor(14); cout << "Жақсы ілгерілеушілік! Тоқтамаңыз!";
+    } else if (completionRate > 0) {
+        setColor(11); cout << "Бастамасы жаман емес! Жалғастыра беріңіз!";
+    } else {
+        setColor(12); cout << "Іске сәт! Тапсырмаларды орындауды бастайтын кез келді!";
+    }
+    setColor(7);
+    
+    cout << "\n\nЖалғастыру үшін Enter басыңыз...";
+    cin.ignore();
+    cin.get();
+}
+
+int main() {
+    // Консольді UTF-8 форматына баптау (қазақ әріптері мен эмодзилер үшін)
+    SetConsoleCP(CP_UTF8);
+    SetConsoleOutputCP(CP_UTF8);
+    
+    int choice;
+    
+    while (true) {
+        printHeader();
+        displayMenu();
+        
+        if (!(cin >> choice)) {
+            cin.clear();
+            cin.ignore(1000, '\n');
+            continue;
+        }
+        
+        switch (choice) {
+            case 1: addTask(); break;
+            case 2: displayTasks(); break;
+            case 3: completeTask(); break;
+            case 4: deleteTask(); break;
+            case 5: showStatistics(); break;
+            case 0:
+                printHeader();
+                setColor(11);
+                cout << "\n👋 TaskFlow-ды пайдаланғаныңызға рахмет!" << endl;
+                cout << "   Сау болыңыз!" << endl;
+                setColor(7);
+                Sleep(2000);
+                return 0;
+            default:
+                setColor(12);
+                cout << "\n❌ Қате таңдау! Қайтадан көріңіз." << endl;
+                setColor(7);
+                Sleep(1500);
+        }
+    }
+    
+    return 0;
+}
